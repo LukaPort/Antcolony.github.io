@@ -1,0 +1,2456 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Ant Colony Optimization</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: #0b1020;
+    color: #e8ecf7;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+
+/* ================================
+   HEADER
+================================ */
+
+header {
+    padding: 20px 30px;
+    background: #11182c;
+    border-bottom: 1px solid #28314b;
+}
+
+header h1 {
+    margin: 0 0 8px;
+    font-size: 27px;
+}
+
+header p {
+    margin: 0;
+    color: #8f9ab5;
+}
+
+
+/* ================================
+   ОСНОВНАЯ СЕТКА
+================================ */
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    min-height: calc(100vh - 90px);
+}
+
+
+/* ================================
+   ОБЛАСТЬ ГРАФА
+================================ */
+
+.simulation {
+    padding: 20px;
+    min-width: 0;
+}
+
+canvas {
+    display: block;
+
+    width: 100%;
+    height: min(650px, calc(100vh - 130px));
+
+    min-height: 400px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #151e36,
+            #090e1b 70%
+        );
+
+    border: 1px solid #28314b;
+    border-radius: 14px;
+}
+
+
+/* ================================
+   БОКОВАЯ ПАНЕЛЬ
+================================ */
+
+.side {
+    padding: 18px;
+
+    background: #101629;
+
+    border-left: 1px solid #28314b;
+
+    overflow-y: auto;
+}
+
+.panel {
+    background: #151d32;
+
+    border: 1px solid #28314b;
+    border-radius: 12px;
+
+    padding: 15px;
+
+    margin-bottom: 14px;
+}
+
+.panel h2 {
+    margin: 0 0 13px;
+
+    font-size: 16px;
+}
+
+
+/* ================================
+   КНОПКИ
+================================ */
+
+button {
+    width: 100%;
+
+    padding: 11px;
+
+    margin-top: 7px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: #394b78;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    transition: 0.15s;
+}
+
+button:hover {
+    background: #4a5f94;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+
+/* ================================
+   ПАРАМЕТРЫ
+================================ */
+
+.control {
+    margin-bottom: 14px;
+}
+
+.control label {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 7px;
+
+    color: #b8c1d8;
+
+    font-size: 14px;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+
+/* ================================
+   СТАТИСТИКА
+================================ */
+
+.stats {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 8px;
+}
+
+.stat {
+    background: #0e1425;
+
+    border-radius: 8px;
+
+    padding: 10px;
+}
+
+.stat-name {
+    color: #7f8ba7;
+
+    font-size: 11px;
+}
+
+.stat-value {
+    margin-top: 4px;
+
+    font-size: 18px;
+
+    font-weight: bold;
+}
+
+.best {
+    color: #65e6a1;
+}
+
+
+/* ================================
+   ФОРМУЛЫ
+================================ */
+
+.formula {
+    padding: 10px;
+
+    border-radius: 8px;
+
+    background: #0b1020;
+
+    font-family: "Times New Roman", serif;
+
+    font-size: 18px;
+
+    text-align: center;
+
+    line-height: 1.7;
+
+    overflow-x: auto;
+}
+
+.info {
+    color: #8f9ab5;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+/* ================================
+   ЛЕГЕНДА
+================================ */
+
+.legend {
+    display: grid;
+
+    gap: 7px;
+
+    font-size: 13px;
+}
+
+.legend-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: #aeb8d0;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+
+    min-width: 10px;
+
+    border-radius: 50%;
+}
+
+
+/* ================================
+   МОБИЛЬНАЯ ВЕРСИЯ
+================================ */
+
+@media (max-width: 900px) {
+
+    header {
+        padding: 15px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    header p {
+        font-size: 13px;
+    }
+
+    .layout {
+        display: block;
+
+        min-height: 0;
+    }
+
+    .simulation {
+        padding: 10px;
+    }
+
+    canvas {
+        width: 100%;
+
+        height: 75vw;
+
+        min-height: 320px;
+
+        max-height: 520px;
+
+        border-radius: 12px;
+    }
+
+    .side {
+        border-left: 0;
+
+        border-top: 1px solid #28314b;
+
+        padding: 10px;
+
+        overflow: visible;
+    }
+
+    .panel {
+        margin-bottom: 10px;
+    }
+
+    button {
+        padding: 13px;
+    }
+
+}
+
+
+/* ================================
+   УЗКИЙ ТЕЛЕФОН
+================================ */
+
+@media (max-width: 420px) {
+
+    canvas {
+        height: 82vw;
+
+        min-height: 300px;
+    }
+
+    .formula {
+        font-size: 16px;
+    }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>🐜 Ant Colony Optimization</h1>
+
+    <p>
+        Визуализация муравьиного алгоритма
+        поиска оптимального пути
+    </p>
+
+</header>
+
+
+<div class="layout">
+
+
+    <!-- =================================
+         ГРАФ
+    ================================== -->
+
+    <main class="simulation">
+
+        <canvas id="canvas"></canvas>
+
+    </main>
+
+
+    <!-- =================================
+         ПАНЕЛЬ
+    ================================== -->
+
+    <aside class="side">
+
+
+        <!-- УПРАВЛЕНИЕ -->
+
+        <div class="panel">
+
+            <h2>Управление</h2>
+
+
+            <button id="startBtn">
+                ▶ Запустить
+            </button>
+
+
+            <button id="pauseBtn">
+                Ⅱ Пауза
+            </button>
+
+
+            <button id="resetBtn">
+                ↻ Сбросить
+            </button>
+
+
+            <button id="addNodeBtn">
+                ＋ Добавить вершину
+            </button>
+
+
+            <button id="removeNodeBtn">
+                − Убрать вершину
+            </button>
+
+        </div>
+
+
+        <!-- ПАРАМЕТРЫ -->
+
+        <div class="panel">
+
+            <h2>
+                Параметры ACO
+            </h2>
+
+
+            <div class="control">
+
+                <label>
+
+                    <span>
+                        α — влияние феромона
+                    </span>
+
+                    <span id="alphaValue">
+                        1.0
+                    </span>
+
+                </label>
+
+
+                <input
+                    id="alpha"
+                    type="range"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value="1"
+                >
+
+            </div>
+
+
+            <div class="control">
+
+                <label>
+
+                    <span>
+                        β — влияние расстояния
+                    </span>
+
+                    <span id="betaValue">
+                        2.0
+                    </span>
+
+                </label>
+
+
+                <input
+                    id="beta"
+                    type="range"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value="2"
+                >
+
+            </div>
+
+
+            <div class="control">
+
+                <label>
+
+                    <span>
+                        ρ — испарение
+                    </span>
+
+                    <span id="rhoValue">
+                        0.20
+                    </span>
+
+                </label>
+
+
+                <input
+                    id="rho"
+                    type="range"
+                    min="0"
+                    max="0.9"
+                    step="0.01"
+                    value="0.2"
+                >
+
+            </div>
+
+
+            <div class="control">
+
+                <label>
+
+                    <span>
+                        Q — количество феромона
+                    </span>
+
+                    <span id="qValue">
+                        100
+                    </span>
+
+                </label>
+
+
+                <input
+                    id="q"
+                    type="range"
+                    min="10"
+                    max="300"
+                    step="10"
+                    value="100"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- СТАТИСТИКА -->
+
+        <div class="panel">
+
+            <h2>
+                Статистика
+            </h2>
+
+
+            <div class="stats">
+
+
+                <div class="stat">
+
+                    <div class="stat-name">
+                        Вершин
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="nodeCount"
+                    >
+                        4
+                    </div>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <div class="stat-name">
+                        Итерация
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="iteration"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <div class="stat-name">
+                        Лучший путь
+                    </div>
+
+                    <div
+                        class="stat-value best"
+                        id="bestLength"
+                    >
+                        —
+                    </div>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <div class="stat-name">
+                        Средний путь
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="averageLength"
+                    >
+                        —
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- ФОРМУЛА ВЕРОЯТНОСТИ -->
+
+        <div class="panel">
+
+            <h2>
+                Вероятность выбора пути
+            </h2>
+
+
+            <div class="formula">
+
+                P<sub>ij</sub> =
+
+                <br>
+
+                τ<sub>ij</sub><sup>α</sup>
+                η<sub>ij</sub><sup>β</sup>
+
+                <br>
+
+                ─────────────────
+
+                <br>
+
+                Σ τ<sub>ik</sub><sup>α</sup>
+                η<sub>ik</sub><sup>β</sup>
+
+            </div>
+
+
+            <p class="info">
+
+                Чем больше феромона τ и чем
+                короче расстояние, тем выше
+                вероятность выбора ребра.
+
+            </p>
+
+        </div>
+
+
+        <!-- ИСПАРЕНИЕ -->
+
+        <div class="panel">
+
+            <h2>
+                Обновление феромона
+            </h2>
+
+
+            <div class="formula">
+
+                τ(t+1)
+
+                =
+
+                (1 − ρ)τ(t)
+
+                +
+
+                Δτ
+
+            </div>
+
+
+            <p class="info">
+
+                ρ отвечает за скорость испарения
+                старого феромона.
+
+            </p>
+
+        </div>
+
+
+        <!-- ФЕРОМОН -->
+
+        <div class="panel">
+
+            <h2>
+                Феромон от муравья
+            </h2>
+
+
+            <div class="formula">
+
+                Δτ = Q / L
+
+            </div>
+
+
+            <p class="info">
+
+                L — длина маршрута муравья.
+
+                Чем короче маршрут, тем больше
+                феромона он оставляет.
+
+            </p>
+
+        </div>
+
+
+        <!-- ЛЕГЕНДА -->
+
+        <div class="panel">
+
+            <h2>
+                Обозначения
+            </h2>
+
+
+            <div class="legend">
+
+
+                <div class="legend-item">
+
+                    <span
+                        class="dot"
+                        style="background:#65e6a1"
+                    ></span>
+
+                    Лучший найденный маршрут
+
+                </div>
+
+
+                <div class="legend-item">
+
+                    <span
+                        class="dot"
+                        style="background:#765cff"
+                    ></span>
+
+                    Высокая концентрация феромона
+
+                </div>
+
+
+                <div class="legend-item">
+
+                    <span
+                        class="dot"
+                        style="background:#33405e"
+                    ></span>
+
+                    Низкая концентрация феромона
+
+                </div>
+
+
+                <div class="legend-item">
+
+                    <span
+                        class="dot"
+                        style="background:#ffbd5c"
+                    ></span>
+
+                    Муравей
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- ОБЪЯСНЕНИЕ -->
+
+        <div class="panel">
+
+            <h2>
+                Как работает алгоритм
+            </h2>
+
+
+            <p class="info">
+
+                <b>1.</b>
+                Муравьи исследуют граф.
+
+                <br><br>
+
+                <b>2.</b>
+                Каждый муравей строит свой маршрут.
+
+                <br><br>
+
+                <b>3.</b>
+                Короткие маршруты получают больше
+                феромона.
+
+                <br><br>
+
+                <b>4.</b>
+                Старый феромон испаряется.
+
+                <br><br>
+
+                <b>5.</b>
+                Хорошие маршруты становятся
+                привлекательнее.
+
+                <br><br>
+
+                <b>6.</b>
+                Через множество итераций появляется
+                предпочтительный маршрут.
+
+            </p>
+
+        </div>
+
+
+    </aside>
+
+</div>
+
+
+<script>
+
+
+/* =========================================
+   CANVAS
+========================================= */
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+/* =========================================
+   ПАРАМЕТРЫ ACO
+========================================= */
+
+let alpha = 1;
+
+let beta = 2;
+
+let rho = 0.2;
+
+let Q = 100;
+
+
+const ANT_COUNT = 30;
+
+
+/* =========================================
+   СОСТОЯНИЕ
+========================================= */
+
+let running = false;
+
+let iteration = 0;
+
+
+/* =========================================
+   ВЕРШИНЫ
+
+   Изначально ровно 4.
+
+   Они специально разнесены,
+   чтобы не накладываться.
+========================================= */
+
+let nodes = [
+
+    {
+        rx: 0.18,
+        ry: 0.22,
+        name: "A"
+    },
+
+    {
+        rx: 0.82,
+        ry: 0.22,
+        name: "B"
+    },
+
+    {
+        rx: 0.82,
+        ry: 0.78,
+        name: "C"
+    },
+
+    {
+        rx: 0.18,
+        ry: 0.78,
+        name: "D"
+    }
+
+];
+
+
+/* =========================================
+   РЁБРА
+========================================= */
+
+let edges = [];
+
+
+/* =========================================
+   МУРАВЬИ
+========================================= */
+
+let ants = [];
+
+
+/* =========================================
+   ЛУЧШИЙ МАРШРУТ
+========================================= */
+
+let bestPath = null;
+
+let bestLength = Infinity;
+
+
+/* =========================================
+   РАЗМЕР CANVAS
+========================================= */
+
+function resizeCanvas() {
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+
+    canvas.width =
+        rect.width;
+
+
+    canvas.height =
+        rect.height;
+
+
+    updateNodePositions();
+
+    draw();
+
+}
+
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
+
+
+/* =========================================
+   ОБНОВЛЕНИЕ ПОЗИЦИЙ
+========================================= */
+
+function updateNodePositions() {
+
+    for (
+        const node of nodes
+    ) {
+
+        node.x =
+            node.rx *
+            canvas.width;
+
+
+        node.y =
+            node.ry *
+            canvas.height;
+
+    }
+
+}
+
+
+/* =========================================
+   СОЗДАНИЕ ГРАФА
+========================================= */
+
+function createGraph() {
+
+    edges = [];
+
+
+    /*
+       Создаём ребро между
+       каждой парой вершин.
+    */
+
+    for (
+        let i = 0;
+        i < nodes.length;
+        i++
+    ) {
+
+        for (
+            let j = i + 1;
+            j < nodes.length;
+            j++
+        ) {
+
+            edges.push({
+
+                a: i,
+
+                b: j,
+
+                pheromone: 1
+
+            });
+
+        }
+
+    }
+
+}
+
+
+/* =========================================
+   РАССТОЯНИЕ
+========================================= */
+
+function distance(a, b) {
+
+    const dx =
+        a.x - b.x;
+
+
+    const dy =
+        a.y - b.y;
+
+
+    return Math.sqrt(
+        dx * dx +
+        dy * dy
+    );
+
+}
+
+
+/* =========================================
+   ПОИСК РЕБРА
+========================================= */
+
+function getEdge(a, b) {
+
+    return edges.find(
+        edge =>
+
+            (
+                edge.a === a &&
+                edge.b === b
+            )
+
+            ||
+
+            (
+                edge.a === b &&
+                edge.b === a
+            )
+    );
+
+}
+
+
+/* =========================================
+   ВЫБОР СЛЕДУЮЩЕЙ ВЕРШИНЫ
+========================================= */
+
+function chooseNext(
+    current,
+    visited
+) {
+
+    const candidates = [];
+
+
+    for (
+        let i = 0;
+        i < nodes.length;
+        i++
+    ) {
+
+        if (
+            visited.includes(i)
+        ) {
+
+            continue;
+
+        }
+
+
+        const edge =
+            getEdge(
+                current,
+                i
+            );
+
+
+        if (!edge) {
+
+            continue;
+
+        }
+
+
+        const d =
+            distance(
+                nodes[current],
+                nodes[i]
+            );
+
+
+        /*
+           η = 1 / d
+
+           Чем меньше расстояние,
+           тем больше привлекательность.
+        */
+
+        const eta =
+            1 / d;
+
+
+        /*
+           τ^α
+        */
+
+        const pheromonePart =
+            Math.pow(
+                edge.pheromone,
+                alpha
+            );
+
+
+        /*
+           η^β
+        */
+
+        const distancePart =
+            Math.pow(
+                eta,
+                beta
+            );
+
+
+        /*
+           τ^α × η^β
+        */
+
+        const score =
+            pheromonePart *
+            distancePart;
+
+
+        candidates.push({
+
+            node: i,
+
+            score: score
+
+        });
+
+    }
+
+
+    if (
+        candidates.length === 0
+    ) {
+
+        return null;
+
+    }
+
+
+    /*
+       Сумма вероятностей
+    */
+
+    const total =
+        candidates.reduce(
+            (sum, item) =>
+                sum + item.score,
+            0
+        );
+
+
+    let random =
+        Math.random() *
+        total;
+
+
+    /*
+       Выбираем вершину
+       пропорционально вероятности.
+    */
+
+    for (
+        const candidate
+        of candidates
+    ) {
+
+        random -=
+            candidate.score;
+
+
+        if (
+            random <= 0
+        ) {
+
+            return candidate.node;
+
+        }
+
+    }
+
+
+    return candidates[
+        candidates.length - 1
+    ].node;
+
+}
+
+
+/* =========================================
+   СОЗДАНИЕ МУРАВЬЯ
+========================================= */
+
+function createAnt() {
+
+    /*
+       Все муравьи начинают
+       с вершины A.
+    */
+
+    let current = 0;
+
+
+    let path = [
+        current
+    ];
+
+
+    while (
+        path.length <
+        nodes.length
+    ) {
+
+        const next =
+            chooseNext(
+                current,
+                path
+            );
+
+
+        if (
+            next === null
+        ) {
+
+            break;
+
+        }
+
+
+        path.push(next);
+
+        current = next;
+
+    }
+
+
+    return {
+
+        path: path,
+
+        position: 0,
+
+        progress: 0,
+
+        x: nodes[0].x,
+
+        y: nodes[0].y
+
+    };
+
+}
+
+
+/* =========================================
+   ДЛИНА МАРШРУТА
+========================================= */
+
+function pathLength(path) {
+
+    let total = 0;
+
+
+    for (
+        let i = 0;
+        i < path.length - 1;
+        i++
+    ) {
+
+        total +=
+            distance(
+                nodes[path[i]],
+                nodes[path[i + 1]]
+            );
+
+    }
+
+
+    return total;
+
+}
+
+
+/* =========================================
+   ОДНА ИТЕРАЦИЯ
+========================================= */
+
+function runIteration() {
+
+    ants = [];
+
+
+    let iterationBest =
+        Infinity;
+
+
+    let iterationBestPath =
+        null;
+
+
+    /*
+       Создаём муравьёв
+    */
+
+    for (
+        let i = 0;
+        i < ANT_COUNT;
+        i++
+    ) {
+
+        const ant =
+            createAnt();
+
+
+        ants.push(ant);
+
+
+        const length =
+            pathLength(
+                ant.path
+            );
+
+
+        if (
+            ant.path.length ===
+            nodes.length
+
+            &&
+
+            length <
+            iterationBest
+        ) {
+
+            iterationBest =
+                length;
+
+
+            iterationBestPath =
+                [...ant.path];
+
+        }
+
+    }
+
+
+    /*
+       Запоминаем глобально лучший путь.
+    */
+
+    if (
+        iterationBestPath
+        &&
+        iterationBest <
+        bestLength
+    ) {
+
+        bestLength =
+            iterationBest;
+
+
+        bestPath =
+            [...iterationBestPath];
+
+    }
+
+
+    /*
+       ИСПАРЕНИЕ ФЕРОМОНА
+
+       τ = (1 - ρ)τ
+    */
+
+    for (
+        const edge of edges
+    ) {
+
+        edge.pheromone *=
+            (1 - rho);
+
+
+        edge.pheromone =
+            Math.max(
+                edge.pheromone,
+                0.01
+            );
+
+    }
+
+
+    /*
+       ДОБАВЛЕНИЕ ФЕРОМОНА
+
+       Δτ = Q / L
+    */
+
+    for (
+        const ant of ants
+    ) {
+
+        if (
+            ant.path.length !==
+            nodes.length
+        ) {
+
+            continue;
+
+        }
+
+
+        const L =
+            pathLength(
+                ant.path
+            );
+
+
+        const delta =
+            Q / L;
+
+
+        for (
+            let i = 0;
+            i < ant.path.length - 1;
+            i++
+        ) {
+
+            const a =
+                ant.path[i];
+
+
+            const b =
+                ant.path[i + 1];
+
+
+            const edge =
+                getEdge(a, b);
+
+
+            if (edge) {
+
+                edge.pheromone +=
+                    delta;
+
+            }
+
+        }
+
+    }
+
+
+    iteration++;
+
+
+    updateStats();
+
+}
+
+
+/* =========================================
+   СТАТИСТИКА
+========================================= */
+
+function updateStats() {
+
+    document.getElementById(
+        "iteration"
+    ).textContent =
+        iteration;
+
+
+    document.getElementById(
+        "nodeCount"
+    ).textContent =
+        nodes.length;
+
+
+    document.getElementById(
+        "bestLength"
+    ).textContent =
+
+        bestLength === Infinity
+
+            ? "—"
+
+            : bestLength.toFixed(1);
+
+
+    if (
+        ants.length > 0
+    ) {
+
+        const lengths =
+            ants
+
+                .filter(
+                    ant =>
+                        ant.path.length ===
+                        nodes.length
+                )
+
+                .map(
+                    ant =>
+                        pathLength(
+                            ant.path
+                        )
+                );
+
+
+        if (
+            lengths.length > 0
+        ) {
+
+            const avg =
+                lengths.reduce(
+                    (a, b) =>
+                        a + b,
+                    0
+                )
+                /
+                lengths.length;
+
+
+            document.getElementById(
+                "averageLength"
+            ).textContent =
+                avg.toFixed(1);
+
+        }
+
+    }
+
+}
+
+
+/* =========================================
+   ДВИЖЕНИЕ МУРАВЬЁВ
+========================================= */
+
+function updateAnts() {
+
+    for (
+        const ant of ants
+    ) {
+
+        if (
+            ant.position >=
+            ant.path.length - 1
+        ) {
+
+            continue;
+
+        }
+
+
+        const a =
+            nodes[
+                ant.path[
+                    ant.position
+                ]
+            ];
+
+
+        const b =
+            nodes[
+                ant.path[
+                    ant.position + 1
+                ]
+            ];
+
+
+        ant.progress +=
+            0.012;
+
+
+        if (
+            ant.progress >= 1
+        ) {
+
+            ant.progress = 0;
+
+            ant.position++;
+
+            continue;
+
+        }
+
+
+        ant.x =
+            a.x +
+            (
+                b.x - a.x
+            )
+            *
+            ant.progress;
+
+
+        ant.y =
+            a.y +
+            (
+                b.y - a.y
+            )
+            *
+            ant.progress;
+
+    }
+
+}
+
+
+/* =========================================
+   ОСНОВНАЯ ОТРИСОВКА
+========================================= */
+
+function draw() {
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    drawEdges();
+
+    drawBestPath();
+
+    drawNodes();
+
+    drawAnts();
+
+}
+
+
+/* =========================================
+   РИСОВАНИЕ РЁБЕР
+========================================= */
+
+function drawEdges() {
+
+    for (
+        const edge of edges
+    ) {
+
+        const a =
+            nodes[edge.a];
+
+
+        const b =
+            nodes[edge.b];
+
+
+        const pheromone =
+            Math.min(
+                edge.pheromone / 8,
+                1
+            );
+
+
+        const width =
+            1 +
+            pheromone * 5;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            a.x,
+            a.y
+        );
+
+
+        ctx.lineTo(
+            b.x,
+            b.y
+        );
+
+
+        ctx.lineWidth =
+            width;
+
+
+        const r =
+            Math.floor(
+                70 +
+                pheromone * 80
+            );
+
+
+        const g =
+            Math.floor(
+                75 +
+                pheromone * 60
+            );
+
+
+        const bl =
+            Math.floor(
+                120 +
+                pheromone * 100
+            );
+
+
+        ctx.strokeStyle =
+            `rgb(${r},${g},${bl})`;
+
+
+        ctx.stroke();
+
+
+        /*
+           Показываем значение
+           феромона около ребра.
+        */
+
+        if (
+            pheromone > 0.15
+        ) {
+
+            const mx =
+                (
+                    a.x +
+                    b.x
+                ) / 2;
+
+
+            const my =
+                (
+                    a.y +
+                    b.y
+                ) / 2;
+
+
+            ctx.fillStyle =
+                "rgba(220,225,255,0.55)";
+
+
+            ctx.font =
+                "10px Arial";
+
+
+            ctx.fillText(
+                edge.pheromone.toFixed(1),
+                mx,
+                my
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =========================================
+   ЛУЧШИЙ ПУТЬ
+========================================= */
+
+function drawBestPath() {
+
+    if (
+        !bestPath
+    ) {
+
+        return;
+
+    }
+
+
+    ctx.beginPath();
+
+
+    for (
+        let i = 0;
+        i < bestPath.length;
+        i++
+    ) {
+
+        const node =
+            nodes[
+                bestPath[i]
+            ];
+
+
+        if (
+            i === 0
+        ) {
+
+            ctx.moveTo(
+                node.x,
+                node.y
+            );
+
+        } else {
+
+            ctx.lineTo(
+                node.x,
+                node.y
+            );
+
+        }
+
+    }
+
+
+    ctx.strokeStyle =
+        "#65e6a1";
+
+
+    ctx.lineWidth =
+        6;
+
+
+    ctx.globalAlpha =
+        0.8;
+
+
+    ctx.stroke();
+
+
+    ctx.globalAlpha =
+        1;
+
+}
+
+
+/* =========================================
+   ВЕРШИНЫ
+========================================= */
+
+function drawNodes() {
+
+    for (
+        let i = 0;
+        i < nodes.length;
+        i++
+    ) {
+
+        const node =
+            nodes[i];
+
+
+        /*
+           A = стартовая вершина
+        */
+
+        const isStart =
+            i === 0;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            node.x,
+            node.y,
+            20,
+            0,
+            Math.PI * 2
+        );
+
+
+        ctx.fillStyle =
+            isStart
+                ? "#65e6a1"
+                : "#4f8cff";
+
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "#ffffff";
+
+
+        ctx.lineWidth =
+            2;
+
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            "#07101d";
+
+
+        ctx.font =
+            "bold 14px Arial";
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillText(
+            node.name,
+            node.x,
+            node.y
+        );
+
+
+        ctx.textAlign =
+            "left";
+
+
+        ctx.textBaseline =
+            "alphabetic";
+
+    }
+
+}
+
+
+/* =========================================
+   МУРАВЬИ
+========================================= */
+
+function drawAnts() {
+
+    for (
+        const ant of ants
+    ) {
+
+        if (
+            ant.position >=
+            ant.path.length - 1
+        ) {
+
+            continue;
+
+        }
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            ant.x,
+            ant.y,
+            5,
+            0,
+            Math.PI * 2
+        );
+
+
+        ctx.fillStyle =
+            "#ffbd5c";
+
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "#251b09";
+
+
+        ctx.lineWidth =
+            1;
+
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* =========================================
+   АНИМАЦИЯ
+========================================= */
+
+function animationLoop() {
+
+    if (
+        running
+    ) {
+
+        updateAnts();
+
+        draw();
+
+    }
+
+
+    requestAnimationFrame(
+        animationLoop
+    );
+
+}
+
+
+/* =========================================
+   ЗАПУСК ИТЕРАЦИЙ
+========================================= */
+
+let lastIteration = 0;
+
+
+function simulationLoop(
+    timestamp
+) {
+
+    if (
+        running
+        &&
+        timestamp -
+        lastIteration >
+        1200
+    ) {
+
+        runIteration();
+
+
+        lastIteration =
+            timestamp;
+
+    }
+
+
+    requestAnimationFrame(
+        simulationLoop
+    );
+
+}
+
+
+/* =========================================
+   ЗАПУСК
+========================================= */
+
+document.getElementById(
+    "startBtn"
+).onclick = () => {
+
+    running = true;
+
+};
+
+
+/* =========================================
+   ПАУЗА
+========================================= */
+
+document.getElementById(
+    "pauseBtn"
+).onclick = () => {
+
+    running = false;
+
+};
+
+
+/* =========================================
+   СБРОС
+========================================= */
+
+document.getElementById(
+    "resetBtn"
+).onclick = () => {
+
+    running = false;
+
+    iteration = 0;
+
+    bestPath = null;
+
+    bestLength = Infinity;
+
+    ants = [];
+
+
+    createGraph();
+
+
+    updateStats();
+
+    draw();
+
+};
+
+
+/* =========================================
+   ДОБАВЛЕНИЕ ВЕРШИНЫ
+========================================= */
+
+document.getElementById(
+    "addNodeBtn"
+).onclick = () => {
+
+    /*
+       Максимум букв A-Z.
+    */
+
+    if (
+        nodes.length >= 26
+    ) {
+
+        return;
+
+    }
+
+
+    const name =
+        String.fromCharCode(
+            65 + nodes.length
+        );
+
+
+    /*
+       Пытаемся найти место,
+       которое находится далеко
+       от существующих вершин.
+    */
+
+    let bestX = 0.5;
+
+    let bestY = 0.5;
+
+    let bestDistance = -1;
+
+
+    for (
+        let attempt = 0;
+        attempt < 100;
+        attempt++
+    ) {
+
+        const x =
+            0.12 +
+            Math.random() * 0.76;
+
+
+        const y =
+            0.12 +
+            Math.random() * 0.76;
+
+
+        let minDistance =
+            Infinity;
+
+
+        for (
+            const node of nodes
+        ) {
+
+            const dx =
+                x - node.rx;
+
+
+            const dy =
+                y - node.ry;
+
+
+            const d =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy
+                );
+
+
+            minDistance =
+                Math.min(
+                    minDistance,
+                    d
+                );
+
+        }
+
+
+        if (
+            minDistance >
+            bestDistance
+        ) {
+
+            bestDistance =
+                minDistance;
+
+            bestX =
+                x;
+
+            bestY =
+                y;
+
+        }
+
+    }
+
+
+    nodes.push({
+
+        rx: bestX,
+
+        ry: bestY,
+
+        name: name
+
+    });
+
+
+    updateNodePositions();
+
+
+    /*
+       После изменения графа
+       начинаем оптимизацию заново.
+    */
+
+    createGraph();
+
+    ants = [];
+
+    bestPath = null;
+
+    bestLength = Infinity;
+
+    iteration = 0;
+
+
+    updateStats();
+
+    draw();
+
+};
+
+
+/* =========================================
+   УДАЛЕНИЕ ВЕРШИНЫ
+========================================= */
+
+document.getElementById(
+    "removeNodeBtn"
+).onclick = () => {
+
+    /*
+       Минимум 2 вершины.
+    */
+
+    if (
+        nodes.length <= 2
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+       Удаляем последнюю вершину.
+
+       Например:
+
+       A B C D E
+
+       станет
+
+       A B C D
+    */
+
+    nodes.pop();
+
+
+    /*
+       Пересоздаём граф.
+    */
+
+    updateNodePositions();
+
+    createGraph();
+
+
+    /*
+       Сбрасываем алгоритм,
+       потому что старый маршрут
+       уже относится к другому графу.
+    */
+
+    ants = [];
+
+    bestPath = null;
+
+    bestLength = Infinity;
+
+    iteration = 0;
+
+
+    updateStats();
+
+    draw();
+
+};
+
+
+/* =========================================
+   SLIDERS
+========================================= */
+
+document.getElementById(
+    "alpha"
+).oninput = function () {
+
+    alpha =
+        Number(
+            this.value
+        );
+
+
+    document.getElementById(
+        "alphaValue"
+    ).textContent =
+        alpha.toFixed(1);
+
+};
+
+
+document.getElementById(
+    "beta"
+).oninput = function () {
+
+    beta =
+        Number(
+            this.value
+        );
+
+
+    document.getElementById(
+        "betaValue"
+    ).textContent =
+        beta.toFixed(1);
+
+};
+
+
+document.getElementById(
+    "rho"
+).oninput = function () {
+
+    rho =
+        Number(
+            this.value
+        );
+
+
+    document.getElementById(
+        "rhoValue"
+    ).textContent =
+        rho.toFixed(2);
+
+};
+
+
+document.getElementById(
+    "q"
+).oninput = function () {
+
+    Q =
+        Number(
+            this.value
+        );
+
+
+    document.getElementById(
+        "qValue"
+    ).textContent =
+        Q;
+
+};
+
+
+/* =========================================
+   ИНИЦИАЛИЗАЦИЯ
+========================================= */
+
+createGraph();
+
+resizeCanvas();
+
+updateStats();
+
+animationLoop()cript>
+
+</body>
+</html
